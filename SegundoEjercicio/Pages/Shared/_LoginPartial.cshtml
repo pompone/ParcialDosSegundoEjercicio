@@ -1,0 +1,31 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SegundoEjercicio.Models
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        var u = await UserManager.GetUserAsync(User);
+        var display = !string.IsNullOrWhiteSpace(u?.FullName)
+        ? u!.FullName
+        : (u?.Email?.Split('@').FirstOrDefault() ?? "Usuario");
+
+        <li class="nav-item">
+            <span class="nav-link">Hola, @display</span>
+        </li>
+        <li class="nav-item">
+            <form class="form-inline" method="post"
+                  asp-area="Identity" asp-page="/Account/Logout"
+                  asp-route-returnUrl="~/Libros">
+                <button type="submit" class="nav-link btn btn-link">Cerrar sesión</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a></li>
+        <li class="nav-item"><a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Registrarme</a></li>
+    }
+</ul>
+

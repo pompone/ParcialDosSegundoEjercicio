@@ -1,0 +1,37 @@
+﻿@page "{bookId:int}"
+@model SegundoEjercicio.Pages.Libros.Solicitudes.CreateModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Socio")]
+@{
+    ViewData["Title"] = "Solicitar préstamo";
+}
+<h2>Solicitar préstamo</h2>
+
+<div class="alert alert-info">
+    Libro: <strong>@Model.Book?.Title</strong>
+</div>
+
+<form method="post">
+    <input type="hidden" asp-for="BookId" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+    <div class="mb-3">
+        <label asp-for="DesiredReturnDate" class="form-label">Fecha de devolución</label>
+        <input asp-for="DesiredReturnDate" class="form-control" type="date" />
+        <span asp-validation-for="DesiredReturnDate" class="text-danger small"></span>
+        <div class="form-text">Elegí la fecha estimada para devolver el libro.</div>
+    </div>
+
+    <button class="btn btn-primary">Enviar solicitud</button>
+    <a class="btn btn-secondary" asp-page="/Libros/Index">Volver</a>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-warning mt-3">@Model.Error</div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

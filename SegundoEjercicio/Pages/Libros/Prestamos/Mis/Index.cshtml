@@ -1,0 +1,64 @@
+﻿@page
+@model SegundoEjercicio.Pages.Libros.Prestamos.Mis.IndexModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Socio")]
+@{
+    ViewData["Title"] = "Mis préstamos";
+}
+<h2>Mis préstamos</h2>
+
+<h4>Solicitudes pendientes</h4>
+@if (!Model.Pending.Any())
+{
+    <div class="text-muted">No tenés solicitudes pendientes.</div>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (var s in Model.Pending)
+        {
+            <li class="list-group-item d-flex justify-content-between">
+                <span>@s.BookTitle <small class="text-muted">(@s.RequestedAt.ToLocalTime())</small></span>
+                <span class="badge bg-warning text-dark">Pendiente</span>
+            </li>
+        }
+    </ul>
+}
+
+<h4>Préstamos activos</h4>
+@if (!Model.Active.Any())
+{
+    <div class="text-muted">No tenés préstamos activos.</div>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (var p in Model.Active)
+        {
+            <li class="list-group-item d-flex justify-content-between">
+                <span>@p.BookTitle</span>
+                <span>Vence: @p.DueDate.ToShortDateString()</span>
+            </li>
+        }
+    </ul>
+}
+
+<h4>Historial</h4>
+@if (!Model.History.Any())
+{
+    <div class="text-muted">Sin historial.</div>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var h in Model.History)
+        {
+            <li class="list-group-item">
+                @h.BookTitle
+                <small class="text-muted">
+                    Prestado: @h.LoanDate.ToShortDateString()
+                    — Devuelto: @h.ReturnDate?.ToShortDateString()
+                </small>
+            </li>
+        }
+    </ul>
+}

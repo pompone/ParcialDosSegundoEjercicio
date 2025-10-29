@@ -1,0 +1,73 @@
+﻿@page
+@model SegundoEjercicio.Pages.Admin.Usuarios.IndexModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
+@{
+    ViewData["Title"] = "Usuarios";
+}
+<h2>Usuarios</h2>
+
+@if (TempData["msg"] is string m)
+{
+    <div class="alert alert-info">@m</div>
+}
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model.Items)
+        {
+            <tr>
+                <td>@(u.FullName ?? "(sin nombre)")</td>
+                <td>@u.Email</td>
+                <td>@string.Join(", ", u.Roles)</td>
+                <td>@(u.IsLocked ? "Baneado" : "Activo")</td>
+                <td class="text-end">
+                    <!-- Roles (lo que ya tenías) -->
+                    <form method="post" asp-page-handler="MakeBiblio" asp-route-id="@u.Id" class="d-inline">
+                        <button class="btn btn-sm btn-outline-primary">Hacer Bibliotecario</button>
+                    </form>
+                    <form method="post" asp-page-handler="MakeSocio" asp-route-id="@u.Id" class="d-inline">
+                        <button class="btn btn-sm btn-outline-secondary">Hacer Socio</button>
+                    </form>
+
+                    <!-- Ban / Unban -->
+                    @if (!u.IsLocked)
+                    {
+                        <form method="post" asp-page-handler="Ban" asp-route-id="@u.Id" class="d-inline">
+                            <button class="btn btn-sm btn-outline-warning"
+                                    onclick="return confirm('¿Banear a @u.Email? No podrá iniciar sesión.');">
+                                Banear
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="Unban" asp-route-id="@u.Id" class="d-inline">
+                            <button class="btn btn-sm btn-outline-success"
+                                    onclick="return confirm('¿Reactivar a @u.Email?');">
+                                Desbanear
+                            </button>
+                        </form>
+                    }
+
+                    <!-- Eliminar -->
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@u.Id" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('¿Eliminar definitivamente a @u.Email? Esta acción no se puede deshacer.');">
+                            Eliminar
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+

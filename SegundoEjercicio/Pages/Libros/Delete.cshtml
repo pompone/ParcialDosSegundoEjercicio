@@ -1,0 +1,11 @@
+﻿@page "{id:int}"
+@model SegundoEjercicio.Pages.Libros.DeleteModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
+@{
+    ViewData["Title"] = "Borrar libro";
+}
+<h3>¿Eliminar "@Model.Book?.Title"?</h3>
+<form method="post">
+    <button class="btn btn-danger">Sí, borrar</button>
+    <a class="btn btn-secondary" asp-page="Index">Cancelar</a>
+</form>

@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SegundoEjercicio</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SegundoEjercicio.styles.css" asp-append-version="true" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-page="/Libros/Index">SegundoEjercicio</a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div id="mainNavbar" class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <!-- Menú izquierdo -->
+                    <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/Libros/Index">
+                                <i class="bi bi-book me-1"></i> Libros
+                            </a>
+                        </li>
+
+                        @* Vistas por rol *@
+                        @if (User.IsInRole("Bibliotecario"))
+                        {
+                            @* Quitado el item "Préstamos" *@
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Libros/Solicitudes/Index">
+                                    <i class="bi bi-exclamation-triangle me-1"></i> Solicitudes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Admin/Usuarios/Index">
+                                    <i class="bi bi-people-fill me-1"></i> Usuarios
+                                </a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Socio"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Libros/Prestamos/Mis/Index">Mis préstamos</a>
+                            </li>
+                        }
+                    </ul>
+
+                    <!-- Menú derecho: saludo + login/logout/register -->
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; @DateTime.Now.Year - SegundoEjercicio
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+

@@ -1,0 +1,28 @@
+﻿/* wwwroot/css/auth.css */
+html, body {
+    height: 100%;
+}
+
+.auth-hero {
+    position: fixed;
+    inset: 0;
+    background: url('/img/libros-libreriajpeg.webp') center no-repeat fixed;
+    background-size: cover; 
+    filter: brightness(0.55);
+    z-index: -1;
+}
+
+.auth-card {
+    backdrop-filter: blur(6px);
+    background: rgba(255,255,255,.85);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    padding: 28px;
+}
+/* Ocultar header/footer solo en páginas de auth */
+body.login-page header,
+body.login-page footer,
+body.register-page header,
+body.register-page footer {
+    display: none !important;
+}

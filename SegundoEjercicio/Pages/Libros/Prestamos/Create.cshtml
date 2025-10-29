@@ -1,0 +1,30 @@
+﻿@page
+@model SegundoEjercicio.Pages.Prestamos.CreateModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
+@{
+    ViewData["Title"] = "Nuevo préstamo";
+}
+<h2>Nuevo préstamo</h2>
+
+<form method="post" class="row g-3">
+    <div class="col-md-6">
+        <label class="form-label">Libro</label>
+        <select asp-for="Loan.BookId" asp-items="Model.Books" class="form-select"></select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Socio</label>
+        <select asp-for="Loan.MemberId" asp-items="Model.Members" class="form-select"></select>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Loan.LoanDate" class="form-label"></label>
+        <input asp-for="Loan.LoanDate" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Loan.DueDate" class="form-label"></label>
+        <input asp-for="Loan.DueDate" class="form-control" />
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary">Guardar</button>
+        <a class="btn btn-secondary" asp-page="Index">Volver</a>
+    </div>
+</form>

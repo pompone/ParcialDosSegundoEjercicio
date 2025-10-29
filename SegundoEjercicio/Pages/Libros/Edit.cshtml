@@ -1,0 +1,41 @@
+﻿@page "{id:int}"
+@model SegundoEjercicio.Pages.Libros.EditModel
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
+@{
+    ViewData["Title"] = "Editar libro";
+}
+<h2>Editar libro</h2>
+
+<form method="post" class="row g-3">
+    <input type="hidden" asp-for="Book.Id" />
+    <div class="col-md-6">
+        <label asp-for="Book.Title" class="form-label"></label>
+        <input asp-for="Book.Title" class="form-control" />
+        <span asp-validation-for="Book.Title" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Autor</label>
+        <select asp-for="Book.AuthorId" asp-items="Model.Authors" class="form-select"></select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Categoría</label>
+        <select asp-for="Book.CategoryId" asp-items="Model.Categories" class="form-select"></select>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Book.PublishedYear" class="form-label"></label>
+        <input asp-for="Book.PublishedYear" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Book.ISBN" class="form-label"></label>
+        <input asp-for="Book.ISBN" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Book.CopiesAvailable" class="form-label"></label>
+        <input asp-for="Book.CopiesAvailable" class="form-control" />
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary">Guardar cambios</button>
+        <a class="btn btn-secondary" asp-page="Index">Volver</a>
+    </div>
+</form>
