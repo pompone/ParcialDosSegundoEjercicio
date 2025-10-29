@@ -1,21 +1,29 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SegundoEjercicio.Data;
 using SegundoEjercicio.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === Cadena desde configuración (user-secrets / env var en Render) ===
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+// --- Npgsql switch común (evita sorpresas con timestamps) ---
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// === DbContext de negocio (dominio) ===
+// --- ConnectionString: appsettings / secrets / env var (Render) ---
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+         ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(cs))
+    throw new InvalidOperationException("No se encontró la cadena de conexión DefaultConnection.");
+
+// --- DbContexts ---
 builder.Services.AddDbContext<LibraryContext>(opt =>
     opt.UseNpgsql(cs, npg => npg.EnableRetryOnFailure()));
 
-// === DbContext de Identity (misma BD) ===
 builder.Services.AddDbContext<AuthDbContext>(opt =>
     opt.UseNpgsql(cs, npg => npg.EnableRetryOnFailure()));
 
+// --- Identity ---
 builder.Services
     .AddDefaultIdentity<AppUser>(opts =>
     {
@@ -25,26 +33,24 @@ builder.Services
         opts.Password.RequireUppercase = true;
         opts.Password.RequireNonAlphanumeric = false;
         opts.Password.RequiredLength = 8;
-        // opcional: bloqueo por intentos fallidos
-        // opts.Lockout.MaxFailedAccessAttempts = 5;
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AuthDbContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
-// Cookies de autenticación (seguras en producción)
+// --- Cookies ---
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.LoginPath = "/cuenta/ingresar";
     o.AccessDeniedPath = "/Identity/Account/AccessDenied";
     o.Cookie.HttpOnly = true;
     o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    o.Cookie.SameSite = SameSiteMode.Lax; // suele funcionar bien detrás de proxy
+    o.Cookie.SameSite = SameSiteMode.Lax;
     o.SlidingExpiration = true;
 });
 
-// Autorización global y alias de rutas (Login/Register en ES)
+// --- Razor + Autorización ---
 builder.Services.AddRazorPages(o =>
 {
     o.Conventions.AuthorizeFolder("/");
@@ -63,9 +69,28 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// ====== Migraciones + Seed ======
-using (var scope = app.Services.CreateScope())
+// --- Reverse proxy headers (Render) ---
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// --- Migraciones y seed seguros ---
+try
+{
+    using var scope = app.Services.CreateScope();
     var sp = scope.ServiceProvider;
 
     var lib = sp.GetRequiredService<LibraryContext>();
@@ -77,20 +102,13 @@ using (var scope = app.Services.CreateScope())
 
     await SeedRolesAndUsersAsync(sp);
     await SeedHelpers.BackfillMembersForSociosAsync(sp);
-}
 
-if (!app.Environment.IsDevelopment())
+    app.Logger.LogInformation("Migraciones y seed OK");
+}
+catch (Exception ex)
 {
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
+    app.Logger.LogError(ex, "Fallo en migraciones/seed (la app sigue levantando para ver logs).");
 }
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 // Home → /Libros
 app.MapGet("/", ctx =>
@@ -137,3 +155,4 @@ static async Task SeedRolesAndUsersAsync(IServiceProvider services)
     if (s.Id == null) await userMgr.CreateAsync(s, "Socio123!");
     if (!await userMgr.IsInRoleAsync(s, "Socio")) await userMgr.AddToRoleAsync(s, "Socio");
 }
+
