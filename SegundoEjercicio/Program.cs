@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -6,10 +7,10 @@ using SegundoEjercicio.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Npgsql switch común (evita sorpresas con timestamps) ---
+// --- Npgsql: comportamiento legacy para timestamps (evita sorpresas) ---
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// --- ConnectionString: appsettings / secrets / env var (Render) ---
+// --- ConnectionString: appsettings / user-secrets / env var (Render) ---
 var cs = builder.Configuration.GetConnectionString("DefaultConnection")
          ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
@@ -54,10 +55,14 @@ builder.Services.ConfigureApplicationCookie(o =>
 builder.Services.AddRazorPages(o =>
 {
     o.Conventions.AuthorizeFolder("/");
+
+    // Permitir anónimo en páginas de Identity necesarias
     o.Conventions.AllowAnonymousToAreaPage("Identity", "/Account/Login");
     o.Conventions.AllowAnonymousToAreaPage("Identity", "/Account/Register");
+    o.Conventions.AllowAnonymousToAreaPage("Identity", "/Account/AccessDenied");
     o.Conventions.AllowAnonymousToPage("/Error");
 
+    // Alias de rutas en español
     o.Conventions.AddAreaPageRoute("Identity", "/Account/Login", "cuenta/ingresar");
     o.Conventions.AddAreaPageRoute("Identity", "/Account/Register", "cuenta/registrarme");
 });
@@ -75,7 +80,12 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-if (!app.Environment.IsDevelopment())
+// --- Manejo de errores según entorno ---
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
@@ -84,6 +94,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -122,37 +133,76 @@ app.MapControllers();
 
 app.Run();
 
-// ====== Seed Roles y Usuarios demo ======
+
+// ====== SEED: roles + usuarios demo (con reset de contraseña si existe) ======
 static async Task SeedRolesAndUsersAsync(IServiceProvider services)
 {
     var roleMgr = services.GetRequiredService<RoleManager<IdentityRole>>();
     var userMgr = services.GetRequiredService<UserManager<AppUser>>();
 
-    string[] roles = { "Bibliotecario", "Socio" };
-    foreach (var r in roles)
+    // Roles requeridos
+    foreach (var r in new[] { "Bibliotecario", "Socio" })
         if (!await roleMgr.RoleExistsAsync(r))
             await roleMgr.CreateAsync(new IdentityRole(r));
 
-    var bEmail = "biblio@demo.com";
-    var b = await userMgr.FindByEmailAsync(bEmail) ?? new AppUser
-    {
-        UserName = bEmail,
-        Email = bEmail,
-        EmailConfirmed = true,
-        FullName = "Admin Biblioteca"
-    };
-    if (b.Id == null) await userMgr.CreateAsync(b, "Biblio123!");
-    if (!await userMgr.IsInRoleAsync(b, "Bibliotecario")) await userMgr.AddToRoleAsync(b, "Bibliotecario");
+    // Admin
+    const string adminEmail = "biblio@demo.com";
+    const string adminPass  = "Biblio123!";
 
-    var sEmail = "socio@demo.com";
-    var s = await userMgr.FindByEmailAsync(sEmail) ?? new AppUser
+    var admin = await userMgr.FindByEmailAsync(adminEmail);
+    if (admin == null)
     {
-        UserName = sEmail,
-        Email = sEmail,
-        EmailConfirmed = true,
-        FullName = "Socio Demo"
-    };
-    if (s.Id == null) await userMgr.CreateAsync(s, "Socio123!");
-    if (!await userMgr.IsInRoleAsync(s, "Socio")) await userMgr.AddToRoleAsync(s, "Socio");
+        admin = new AppUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true,
+            FullName = "Admin Biblioteca"
+        };
+        var create = await userMgr.CreateAsync(admin, adminPass);
+        if (!create.Succeeded)
+            throw new Exception("No se pudo crear el admin: " + string.Join("; ", create.Errors.Select(e => e.Description)));
+    }
+    else
+    {
+        var token = await userMgr.GeneratePasswordResetTokenAsync(admin);
+        await userMgr.ResetPasswordAsync(admin, token, adminPass);
+        await userMgr.SetLockoutEndDateAsync(admin, null);
+        await userMgr.ResetAccessFailedCountAsync(admin);
+        admin.EmailConfirmed = true;
+        await userMgr.UpdateAsync(admin);
+    }
+    if (!await userMgr.IsInRoleAsync(admin, "Bibliotecario"))
+        await userMgr.AddToRoleAsync(admin, "Bibliotecario");
+
+    // Socio demo (opcional)
+    const string socioEmail = "socio@demo.com";
+    const string socioPass  = "Socio123!";
+    var socio = await userMgr.FindByEmailAsync(socioEmail);
+    if (socio == null)
+    {
+        socio = new AppUser
+        {
+            UserName = socioEmail,
+            Email = socioEmail,
+            EmailConfirmed = true,
+            FullName = "Socio Demo"
+        };
+        var createS = await userMgr.CreateAsync(socio, socioPass);
+        if (!createS.Succeeded)
+            throw new Exception("No se pudo crear el socio: " + string.Join("; ", createS.Errors.Select(e => e.Description)));
+    }
+    else
+    {
+        var tokenS = await userMgr.GeneratePasswordResetTokenAsync(socio);
+        await userMgr.ResetPasswordAsync(socio, tokenS, socioPass);
+        await userMgr.SetLockoutEndDateAsync(socio, null);
+        await userMgr.ResetAccessFailedCountAsync(socio);
+        socio.EmailConfirmed = true;
+        await userMgr.UpdateAsync(socio);
+    }
+    if (!await userMgr.IsInRoleAsync(socio, "Socio"))
+        await userMgr.AddToRoleAsync(socio, "Socio");
 }
+
 
