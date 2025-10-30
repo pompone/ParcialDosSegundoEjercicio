@@ -8,42 +8,6 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/auth.css" />
-    <style>
-        /* Oculta header y footer SOLO en esta vista */
-        header, footer { display: none !important; }
-
-        /* Fondo a pantalla completa y sin scroll */
-        html, body {
-            height: 100%;
-            overflow: hidden; /* evita el pequeño desplazamiento vertical */
-        }
-        .auth-hero{
-            position: fixed; inset: 0;
-            background: url('@Url.Content("~/img/libros-libreriajpeg.webp")') center/cover no-repeat fixed;
-            filter: brightness(.65);
-            z-index: 0;
-        }
-
-        /* Alto exacto del contenedor, sin márgenes/paddings residuales */
-        .container[style] {
-            height: 100vh !important;   /* en vez de min-height */
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-
-        /* Estética del card (opcional) */
-        .auth-card{
-            backdrop-filter: blur(3px);
-            background: rgba(255,255,255,.92);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.25);
-        }
-
-        /* IMPORTANTE: en Razor, @media debe escaparse como @@media */
-        @@media (max-width: 576px){
-            .auth-card{ padding: 1.25rem !important; }
-        }
-    </style>
 }
 
 <div class="auth-hero"></div>
@@ -87,6 +51,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
 
 
 
