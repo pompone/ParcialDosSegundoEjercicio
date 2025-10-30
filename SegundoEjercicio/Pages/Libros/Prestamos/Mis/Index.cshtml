@@ -1,8 +1,10 @@
-﻿@page
+@page
 @model SegundoEjercicio.Pages.Libros.Prestamos.Mis.IndexModel
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Socio")]
+@using System.Globalization
 @{
     ViewData["Title"] = "Mis préstamos";
+    var ar = CultureInfo.GetCultureInfo("es-AR");
 }
 <h2>Mis préstamos</h2>
 
@@ -17,7 +19,12 @@ else
         @foreach (var s in Model.Pending)
         {
             <li class="list-group-item d-flex justify-content-between">
-                <span>@s.BookTitle <small class="text-muted">(@s.RequestedAt.ToLocalTime())</small></span>
+                <span>
+                    @s.BookTitle
+                    <small class="text-muted">
+                        (@s.RequestedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm", ar))
+                    </small>
+                </span>
                 <span class="badge bg-warning text-dark">Pendiente</span>
             </li>
         }
@@ -36,7 +43,7 @@ else
         {
             <li class="list-group-item d-flex justify-content-between">
                 <span>@p.BookTitle</span>
-                <span>Vence: @p.DueDate.ToShortDateString()</span>
+                <span>Vence: @p.DueDate.ToString("dd/MM/yyyy", ar)</span>
             </li>
         }
     </ul>
@@ -55,10 +62,11 @@ else
             <li class="list-group-item">
                 @h.BookTitle
                 <small class="text-muted">
-                    Prestado: @h.LoanDate.ToShortDateString()
-                    — Devuelto: @h.ReturnDate?.ToShortDateString()
+                    Prestado: @h.LoanDate.ToString("dd/MM/yyyy", ar)
+                    — Devuelto: @(h.ReturnDate.HasValue ? h.ReturnDate.Value.ToString("dd/MM/yyyy", ar) : "-")
                 </small>
             </li>
         }
     </ul>
 }
+
