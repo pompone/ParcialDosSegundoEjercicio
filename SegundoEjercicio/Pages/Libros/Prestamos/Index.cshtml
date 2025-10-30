@@ -60,9 +60,9 @@
             <tr>
                 <td>@l.Book?.Title (@l.Book?.Author?.Name)</td>
                 <td>@l.Member?.FullName</td>
-                <td>@l.LoanDate.ToString("yyyy-MM-dd")</td>
-                <td>@l.DueDate.ToString("yyyy-MM-dd")</td>
-                <td>@(l.ReturnDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                <td>@l.LoanDate.ToString("dd/MM/yyyy")</td>
+                <td>@l.DueDate.ToString("dd/MM/yyyy")</td>
+                <td>@(l.ReturnDate?.ToString("dd/MM/yyyy") ?? "-")</td>
 
                 <td class="text-end">
                     @* DEVOLVER: form individual por fila *@
@@ -106,4 +106,5 @@
 {
     <div class="alert alert-info">No hay préstamos registrados.</div>
 }
+
 
