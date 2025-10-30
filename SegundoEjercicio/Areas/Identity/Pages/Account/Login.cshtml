@@ -19,7 +19,6 @@
 
         .auth-hero{
             position: fixed; inset: 0;
-            /* Evito @Url.Content para que Razor no analice nada */
             background: url("/img/libros-libreriajpeg.webp") center/cover no-repeat fixed;
             filter: brightness(.65);
             z-index: 0;
@@ -40,13 +39,14 @@
             box-shadow: 0 10px 30px rgba(0,0,0,.25);
         }
 
-        /* IMPORTANTE: en Razor, @media debe escaparse como @@media */
-        @@media (max-width: 576px){
-            .auth-card{ padding: 1.25rem !important; }
-        }
-
-        /* (Opcional) títulos */
         .auth-title{ font-weight: 600; letter-spacing: .2px; }
+    </style>
+
+    <!-- Bloque @media “a prueba de Razor”: cada línea va con @: para forzar texto literal -->
+    <style>
+@:@media (max-width: 576px){
+@:.auth-card{ padding: 1.25rem !important; }
+@:}
     </style>
 }
 
@@ -91,6 +91,8 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+
 
 
 
