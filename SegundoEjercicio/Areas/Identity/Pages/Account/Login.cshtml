@@ -1,6 +1,6 @@
 @page
 @model SegundoEjercicio.Areas.Identity.Pages.Account.LoginModel
-@{
+{
     ViewData["Title"] = "Iniciar sesión";
     Layout = "/Pages/Shared/_Layout.cshtml";
 }
@@ -12,16 +12,24 @@
         /* Oculta header y footer SOLO en esta vista */
         header, footer { display: none !important; }
 
-        /* Fondo a pantalla completa */
-        html, body { height: 100%; }
+        /* Fondo a pantalla completa y sin scroll */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* evita el pequeño desplazamiento vertical */
+        }
         .auth-hero{
             position: fixed; inset: 0;
-            background: url('/img/libros-libreriajpeg.webp') center/cover no-repeat fixed; /* cambiá la ruta si usás otra */
+            background: url('@Url.Content("~/img/libros-libreriajpeg.webp")') center/cover no-repeat fixed;
             filter: brightness(.65);
+            z-index: 0;
         }
 
-        /* Alto completo del contenedor para centrar */
-        .container[style] { min-height: 100vh !important; }
+        /* Alto exacto del contenedor, sin márgenes/paddings residuales */
+        .container[style] {
+            height: 100vh !important;   /* en vez de min-height */
+            margin: 0 !important;
+            padding: 0 !important;
+        }
 
         /* Estética del card (opcional) */
         .auth-card{
@@ -30,12 +38,16 @@
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,.25);
         }
+
+        @media (max-width: 576px){
+            .auth-card{ padding: 1.25rem !important; }
+        }
     </style>
 }
 
 <div class="auth-hero"></div>
 
-<div class="container d-flex align-items-center justify-content-center" style="min-height:100vh;">
+<div class="container d-flex align-items-center justify-content-center" style="height:100vh;">
     <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
         <div class="auth-card p-4 p-md-5">
             <h1 class="h4 auth-title mb-3 text-center">Iniciar sesión</h1>
@@ -46,13 +58,13 @@
 
                 <div class="mb-3">
                     <label asp-for="Input.Email" class="form-label">Email</label>
-                    <input asp-for="Input.Email" class="form-control" placeholder="tu@email.com" />
+                    <input asp-for="Input.Email" class="form-control" placeholder="tu@email.com" autocomplete="username" />
                     <span asp-validation-for="Input.Email" class="text-danger small"></span>
                 </div>
 
                 <div class="mb-2">
                     <label asp-for="Input.Password" class="form-label">Contraseña</label>
-                    <input asp-for="Input.Password" class="form-control" placeholder="********" />
+                    <input asp-for="Input.Password" class="form-control" placeholder="********" autocomplete="current-password" />
                     <span asp-validation-for="Input.Password" class="text-danger small"></span>
                 </div>
 
@@ -74,5 +86,6 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
 
 
