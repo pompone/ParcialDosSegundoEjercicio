@@ -22,9 +22,9 @@ namespace SegundoEjercicio.Pages.Libros.Solicitudes
 
         [BindProperty] public int BookId { get; set; }
 
-        [Display(Name = "Fecha de devolución")]
+        [Display(Name = "Fecha de devoluciÃ³n")]
         [DataType(DataType.Date)]
-        [Required(ErrorMessage = "Elegí una fecha de devolución.")]
+        [Required(ErrorMessage = "ElegÃ­ una fecha de devoluciÃ³n.")]
         [BindProperty] public DateTime? DesiredReturnDate { get; set; }
 
         public Book? Book { get; set; }
@@ -36,14 +36,14 @@ namespace SegundoEjercicio.Pages.Libros.Solicitudes
             Book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == bookId);
             if (Book == null) return NotFound();
 
-            // Valor por defecto: mañana
+            // Valor por defecto: maÃ±ana
             DesiredReturnDate ??= DateTime.Today.AddDays(1);
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Validación manual de rango (opcional: 1 a 30 días)
+            // ValidaciÃ³n manual de rango (opcional: 1 a 30 dÃ­as)
             if (!ModelState.IsValid ||
                 DesiredReturnDate == null ||
                 DesiredReturnDate < DateTime.Today.AddDays(1) ||
@@ -52,9 +52,9 @@ namespace SegundoEjercicio.Pages.Libros.Solicitudes
                 if (DesiredReturnDate is not null)
                 {
                     if (DesiredReturnDate < DateTime.Today.AddDays(1))
-                        ModelState.AddModelError(nameof(DesiredReturnDate), "La fecha debe ser a partir de mañana.");
+                        ModelState.AddModelError(nameof(DesiredReturnDate), "La fecha debe ser a partir de maÃ±ana.");
                     if (DesiredReturnDate > DateTime.Today.AddDays(30))
-                        ModelState.AddModelError(nameof(DesiredReturnDate), "La fecha no puede superar 30 días.");
+                        ModelState.AddModelError(nameof(DesiredReturnDate), "La fecha no puede superar 30 dÃ­as.");
                 }
 
                 Book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == BookId);
@@ -68,31 +68,31 @@ namespace SegundoEjercicio.Pages.Libros.Solicitudes
             var member = await _db.Members.FirstOrDefaultAsync(m => m.AppUserId == user.Id);
             if (member == null)
             {
-                Error = "No se encontró tu perfil de socio. Contactá al bibliotecario.";
+                Error = "No se encontrÃ³ tu perfil de socio. ContactÃ¡ al bibliotecario.";
                 Book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == BookId);
                 return Page();
             }
 
-            // ¿Ya hay solicitud pendiente de este libro?
+            // Â¿Ya hay solicitud pendiente de este libro?
             bool yaPendiente = await _db.LoanRequests
                 .AnyAsync(r => r.MemberId == member.Id &&
                                r.BookId == BookId &&
                                r.Status == LoanRequestStatus.Pending);
             if (yaPendiente)
             {
-                Error = "Ya tenés una solicitud pendiente para este libro.";
+                Error = "Ya tenÃ©s una solicitud pendiente para este libro.";
                 Book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == BookId);
                 return Page();
             }
 
-            // ¿Ya tiene préstamo ACTIVO del libro?
+            // Â¿Ya tiene prÃ©stamo ACTIVO del libro?
             bool prestamoActivo = await _db.Loans
                 .AnyAsync(p => p.MemberId == member.Id &&
                                p.BookId == BookId &&
                                p.ReturnDate == null);
             if (prestamoActivo)
             {
-                Error = "Ya tenés este libro en préstamo.";
+                Error = "Ya tenÃ©s este libro en prÃ©stamo.";
                 Book = await _db.Books.AsNoTracking().FirstOrDefaultAsync(b => b.Id == BookId);
                 return Page();
             }
@@ -102,7 +102,7 @@ namespace SegundoEjercicio.Pages.Libros.Solicitudes
             {
                 BookId = BookId,
                 MemberId = member.Id,
-                Notes = $"Fecha solicitada de devolución: {DesiredReturnDate:yyyy-MM-dd}",
+                Notes = $"Fecha solicitada de devoluciÃ³n: {DesiredReturnDate:yyyy-MM-dd}",
                 Status = LoanRequestStatus.Pending
             });
 
