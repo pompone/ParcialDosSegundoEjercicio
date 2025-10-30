@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model SegundoEjercicio.Areas.Identity.Pages.Account.LoginModel
 @{
     ViewData["Title"] = "Iniciar sesión";
@@ -8,13 +8,36 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/auth.css" />
+    <style>
+        /* Oculta header y footer SOLO en esta vista */
+        header, footer { display: none !important; }
+
+        /* Fondo a pantalla completa */
+        html, body { height: 100%; }
+        .auth-hero{
+            position: fixed; inset: 0;
+            background: url('/img/login-bg.jpg') center/cover no-repeat fixed; /* cambiá la ruta si usás otra */
+            filter: brightness(.65);
+        }
+
+        /* Alto completo del contenedor para centrar */
+        .container[style] { min-height: 100vh !important; }
+
+        /* Estética del card (opcional) */
+        .auth-card{
+            backdrop-filter: blur(3px);
+            background: rgba(255,255,255,.92);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        }
+    </style>
 }
 
 <div class="auth-hero"></div>
 
-<div class="container d-flex align-items-center justify-content-center" style="min-height:calc(100vh - 64px);">
+<div class="container d-flex align-items-center justify-content-center" style="min-height:100vh;">
     <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
-        <div class="auth-card">
+        <div class="auth-card p-4 p-md-5">
             <h1 class="h4 auth-title mb-3 text-center">Iniciar sesión</h1>
 
             <form method="post" novalidate>
@@ -51,3 +74,4 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
