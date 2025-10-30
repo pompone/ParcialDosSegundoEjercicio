@@ -1,6 +1,6 @@
 @page
 @model SegundoEjercicio.Areas.Identity.Pages.Account.LoginModel
-{
+@{
     ViewData["Title"] = "Iniciar sesión";
     Layout = "/Pages/Shared/_Layout.cshtml";
 }
@@ -39,7 +39,8 @@
             box-shadow: 0 10px 30px rgba(0,0,0,.25);
         }
 
-        @media (max-width: 576px){
+        /* IMPORTANTE: en Razor, @media debe escaparse como @@media */
+        @@media (max-width: 576px){
             .auth-card{ padding: 1.25rem !important; }
         }
     </style>
@@ -86,6 +87,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
 
 
 
