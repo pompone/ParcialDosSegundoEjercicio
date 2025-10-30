@@ -56,14 +56,14 @@ namespace SegundoEjercicio.Areas.Identity.Pages.Account
             
             if (result.IsLockedOut)
             {
-                ModelState.AddModelError(string.Empty, "No podÈs iniciar sesiÛn. Contactate con el administrador Alejandro.");
+                ModelState.AddModelError(string.Empty, "No pod√©s iniciar sesi√≥n. Contactate con el administrador Alejandro.");
                 return Page();
             }
 
             if (result.RequiresTwoFactor)
                 return RedirectToPage("./LoginWith2fa", new { ReturnUrl, Input.RememberMe });
 
-            ModelState.AddModelError(string.Empty, "Intento de inicio de sesiÛn inv·lido.");
+            ModelState.AddModelError(string.Empty, "Intento de inicio de sesi√≥n inv√°lido.");
             return Page();
         }
     }
