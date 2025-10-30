@@ -14,7 +14,7 @@
         /* Fondo a pantalla completa y sin scroll */
         html, body {
             height: 100%;
-            overflow: hidden; /* evita desplazamiento vertical */
+            overflow: hidden;
         }
 
         .auth-hero{
@@ -40,13 +40,6 @@
         }
 
         .auth-title{ font-weight: 600; letter-spacing: .2px; }
-    </style>
-
-    <!-- Bloque @media “a prueba de Razor”: cada línea va con @: para forzar texto literal -->
-    <style>
-@:@media (max-width: 576px){
-@:.auth-card{ padding: 1.25rem !important; }
-@:}
     </style>
 }
 
@@ -91,6 +84,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
 
 
 
