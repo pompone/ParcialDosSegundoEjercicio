@@ -81,7 +81,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
     <script>
       const authorSel = document.getElementById('AuthorSelect');
       const authorInp = document.getElementById('NewAuthorInput');
@@ -92,7 +91,7 @@
         if (selectEl.value === '__other') {
           inputEl.classList.remove('d-none');
           inputEl.required = true;
-          // Evita que el select bindeé la FK cuando se elige “Otro…”
+          // Evita bindear la FK cuando se elige “Otro…”
           selectEl.name = 'Ignore_' + fieldName;
         } else {
           inputEl.classList.add('d-none');
@@ -112,6 +111,7 @@
       init();
     </script>
 }
+
 
 
 
