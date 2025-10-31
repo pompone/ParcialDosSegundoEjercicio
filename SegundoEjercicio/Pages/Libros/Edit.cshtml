@@ -2,6 +2,10 @@
 @model SegundoEjercicio.Pages.Libros.EditModel
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
 
+@{
+    ViewData["Title"] = "Editar libro";
+}
+
 <h2>Editar libro</h2>
 
 <form method="post" class="row g-3">
@@ -16,8 +20,10 @@
     <!-- Autor con “Otro…” -->
     <div class="col-md-3">
         <label class="form-label">Autor</label>
-        <select asp-for="Book.AuthorId" asp-items="Model.Authors"
-                class="form-select" id="AuthorSelect">
+        <select asp-for="Book.AuthorId"
+                asp-items="Model.Authors"
+                class="form-select"
+                id="AuthorSelect">
             <option value="">-- Seleccionar --</option>
             <option value="__other">Otro…</option>
         </select>
@@ -27,13 +33,16 @@
                name="NewAuthorName"
                value="@Model.NewAuthorName"
                placeholder="Escribí el nuevo autor" />
+        <span asp-validation-for="NewAuthorName" class="text-danger"></span>
     </div>
 
     <!-- Categoría con “Otro…” -->
     <div class="col-md-3">
         <label class="form-label">Categoría</label>
-        <select asp-for="Book.CategoryId" asp-items="Model.Categories"
-                class="form-select" id="CategorySelect">
+        <select asp-for="Book.CategoryId"
+                asp-items="Model.Categories"
+                class="form-select"
+                id="CategorySelect">
             <option value="">-- Seleccionar --</option>
             <option value="__other">Otro…</option>
         </select>
@@ -43,21 +52,25 @@
                name="NewCategoryName"
                value="@Model.NewCategoryName"
                placeholder="Escribí la nueva categoría" />
+        <span asp-validation-for="NewCategoryName" class="text-danger"></span>
     </div>
 
     <div class="col-md-2">
         <label asp-for="Book.PublishedYear" class="form-label"></label>
         <input asp-for="Book.PublishedYear" class="form-control" />
+        <span asp-validation-for="Book.PublishedYear" class="text-danger"></span>
     </div>
 
     <div class="col-md-4">
         <label asp-for="Book.ISBN" class="form-label"></label>
         <input asp-for="Book.ISBN" class="form-control" />
+        <span asp-validation-for="Book.ISBN" class="text-danger"></span>
     </div>
 
     <div class="col-md-2">
         <label asp-for="Book.CopiesAvailable" class="form-label"></label>
         <input asp-for="Book.CopiesAvailable" class="form-control" />
+        <span asp-validation-for="Book.CopiesAvailable" class="text-danger"></span>
     </div>
 
     <div class="col-12">
@@ -68,6 +81,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
     <script>
       const authorSel = document.getElementById('AuthorSelect');
       const authorInp = document.getElementById('NewAuthorInput');
@@ -78,11 +92,12 @@
         if (selectEl.value === '__other') {
           inputEl.classList.remove('d-none');
           inputEl.required = true;
-          selectEl.name = 'Ignore_' + fieldName;   // evita bindear la FK
+          // Evita que el select bindeé la FK cuando se elige “Otro…”
+          selectEl.name = 'Ignore_' + fieldName;
         } else {
           inputEl.classList.add('d-none');
           inputEl.required = false;
-          selectEl.name = fieldName;               // restaura bind
+          selectEl.name = fieldName; // restaurar binding normal
         }
       }
 
@@ -93,8 +108,10 @@
 
       authorSel.addEventListener('change', () => toggleOther(authorSel, authorInp, 'Book.AuthorId'));
       catSel.addEventListener('change',    () => toggleOther(catSel,    catInp,    'Book.CategoryId'));
+
       init();
     </script>
 }
+
 
 
