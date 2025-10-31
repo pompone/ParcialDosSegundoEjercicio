@@ -87,7 +87,16 @@
       const catSel    = document.getElementById('CategorySelect');
       const catInp    = document.getElementById('NewCategoryInput');
 
-      function toggleOther(selectEl, inputEl, fieldName) {
+      function clearValidation(fieldName){
+        const span = document.querySelector(`[data-valmsg-for='${fieldName}']`);
+        if (span){
+          span.innerText = '';
+          span.classList.remove('field-validation-error');
+          span.classList.add('field-validation-valid');
+        }
+      }
+
+      function toggleOther(selectEl, inputEl, fieldName, textFieldName) {
         if (selectEl.value === '__other') {
           inputEl.classList.remove('d-none');
           inputEl.required = true;
@@ -96,17 +105,19 @@
         } else {
           inputEl.classList.add('d-none');
           inputEl.required = false;
-          selectEl.name = fieldName; // restaurar binding normal
+          inputEl.value = '';              // limpiar texto
+          selectEl.name = fieldName;       // restaurar binding normal
+          clearValidation(textFieldName);  // limpiar mensaje pegado
         }
       }
 
       function init() {
-        toggleOther(authorSel, authorInp, 'Book.AuthorId');
-        toggleOther(catSel,    catInp,    'Book.CategoryId');
+        toggleOther(authorSel, authorInp, 'Book.AuthorId', 'NewAuthorName');
+        toggleOther(catSel,    catInp,    'Book.CategoryId', 'NewCategoryName');
       }
 
-      authorSel.addEventListener('change', () => toggleOther(authorSel, authorInp, 'Book.AuthorId'));
-      catSel.addEventListener('change',    () => toggleOther(catSel,    catInp,    'Book.CategoryId'));
+      authorSel.addEventListener('change', () => toggleOther(authorSel, authorInp, 'Book.AuthorId', 'NewAuthorName'));
+      catSel.addEventListener('change',    () => toggleOther(catSel,    catInp,    'Book.CategoryId', 'NewCategoryName'));
 
       init();
     </script>
