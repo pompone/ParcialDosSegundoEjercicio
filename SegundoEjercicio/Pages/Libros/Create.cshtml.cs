@@ -7,6 +7,7 @@ using SegundoEjercicio.Models;
 
 namespace SegundoEjercicio.Pages.Libros
 {
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Bibliotecario")]
     public class CreateModel : PageModel
     {
         private readonly LibraryContext _db;
@@ -14,61 +15,88 @@ namespace SegundoEjercicio.Pages.Libros
 
         [BindProperty] public Book Book { get; set; } = new();
 
-        // �Otros��
+        // Texto libre cuando eligen “Otro…”
         [BindProperty] public string? NewAuthorName { get; set; }
         [BindProperty] public string? NewCategoryName { get; set; }
 
         public SelectList Authors { get; set; } = default!;
         public SelectList Categories { get; set; } = default!;
 
-        public async Task OnGetAsync() => await LoadCombosAsync();
+        // Flash message superior
+        [TempData] public string? Flash { get; set; }
+
+        public async Task OnGetAsync()
+        {
+            Authors = new SelectList(await _db.Authors.OrderBy(a => a.Name).ToListAsync(), "Id", "Name");
+            Categories = new SelectList(await _db.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name");
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Si el usuario tipe� un autor nuevo, lo creo/uso
-            if (!string.IsNullOrWhiteSpace(NewAuthorName))
+            // Detectar si usaron “Otro…” (el JS renombra los selects a Ignore_*)
+            bool usedOtherAuthor = Request.Form.ContainsKey("Ignore_Book.AuthorId");
+            bool usedOtherCat    = Request.Form.ContainsKey("Ignore_Book.CategoryId");
+
+            // Si NO usaron “Otro…”, limpiamos cualquier error pegado de los textboxes
+            if (!usedOtherAuthor) ModelState.Remove(nameof(NewAuthorName));
+            if (!usedOtherCat)    ModelState.Remove(nameof(NewCategoryName));
+
+            // ── Autor ─────────────────────────────────────────────
+            if (usedOtherAuthor && !string.IsNullOrWhiteSpace(NewAuthorName))
             {
                 var name = NewAuthorName.Trim();
-                var author = await _db.Authors.FirstOrDefaultAsync(a => a.Name == name);
-                if (author == null)
+                bool exists = await _db.Authors.AnyAsync(a => a.Name.ToLower() == name.ToLower());
+                if (exists)
                 {
-                    author = new Author { Name = name };
+                    // Mensaje explícito ARRIBA
+                    ModelState.AddModelError(string.Empty, "Ese autor ya existe. Elegilo de la lista o escribí uno distinto.");
+                    Flash = "El autor que escribiste ya existe. Elegilo de la lista o escribí uno distinto.";
+                }
+                else
+                {
+                    var author = new Author { Name = name };
                     _db.Authors.Add(author);
                     await _db.SaveChangesAsync();
+                    Book.AuthorId = author.Id;
                 }
-                Book.AuthorId = author.Id; // forzamos el nuevo autor
             }
 
-            // Si tipe� una categor�a nueva, la creo/uso
-            if (!string.IsNullOrWhiteSpace(NewCategoryName))
+            // ── Categoría ─────────────────────────────────────────
+            if (usedOtherCat && !string.IsNullOrWhiteSpace(NewCategoryName))
             {
                 var name = NewCategoryName.Trim();
-                var cat = await _db.Categories.FirstOrDefaultAsync(c => c.Name == name);
-                if (cat == null)
+                bool exists = await _db.Categories.AnyAsync(c => c.Name.ToLower() == name.ToLower());
+                if (exists)
                 {
-                    cat = new Category { Name = name };
+                    ModelState.AddModelError(string.Empty, "Esa categoría ya existe. Elegila de la lista o escribí una distinta.");
+                    Flash = "La categoría que escribiste ya existe. Elegila de la lista o escribí una distinta.";
+                }
+                else
+                {
+                    var cat = new Category { Name = name };
                     _db.Categories.Add(cat);
                     await _db.SaveChangesAsync();
+                    Book.CategoryId = cat.Id;
                 }
-                Book.CategoryId = cat.Id;
             }
 
             if (!ModelState.IsValid)
             {
-                await LoadCombosAsync();
+                Authors = new SelectList(await _db.Authors.OrderBy(a => a.Name).ToListAsync(), "Id", "Name", Book.AuthorId);
+                Categories = new SelectList(await _db.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name", Book.CategoryId);
                 return Page();
             }
+
+            // Evitar validación sobre navegación si existiera
+            ModelState.Remove("Book.Author");
+            ModelState.Remove("Book.Category");
 
             _db.Books.Add(Book);
             await _db.SaveChangesAsync();
             return RedirectToPage("Index");
         }
-
-        private async Task LoadCombosAsync()
-        {
-            Authors = new SelectList(await _db.Authors.OrderBy(a => a.Name).ToListAsync(), "Id", "Name");
-            Categories = new SelectList(await _db.Categories.OrderBy(c => c.Name).ToListAsync(), "Id", "Name");
-        }
     }
 }
+
+
 
