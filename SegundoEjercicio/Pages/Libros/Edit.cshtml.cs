@@ -45,17 +45,24 @@ namespace SegundoEjercicio.Pages.Libros
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // ── Autor: si escribieron “Otro…”, validar duplicado y crear si no existe
-            if (!string.IsNullOrWhiteSpace(NewAuthorName))
+            // Detectar si usaron “Otro…” (el JS renombra los selects a Ignore_*)
+            bool usedOtherAuthor = Request.Form.ContainsKey("Ignore_Book.AuthorId");
+            bool usedOtherCat    = Request.Form.ContainsKey("Ignore_Book.CategoryId");
+
+            // Si NO usaron “Otro…”, limpiamos cualquier error pegado de los textboxes
+            if (!usedOtherAuthor) ModelState.Remove(nameof(NewAuthorName));
+            if (!usedOtherCat)    ModelState.Remove(nameof(NewCategoryName));
+
+            // ── Autor: validar duplicado y crear si corresponde ─────────────────
+            if (usedOtherAuthor && !string.IsNullOrWhiteSpace(NewAuthorName))
             {
                 var name = NewAuthorName.Trim();
-
                 bool exists = await _db.Authors
                     .AnyAsync(a => a.Name.ToLower() == name.ToLower());
 
                 if (exists)
                 {
-                    ModelState.AddModelError("NewAuthorName",
+                    ModelState.AddModelError(nameof(NewAuthorName),
                         "Ese autor ya existe. Elegilo de la lista.");
                 }
                 else
@@ -63,21 +70,20 @@ namespace SegundoEjercicio.Pages.Libros
                     var author = new Author { Name = name };
                     _db.Authors.Add(author);
                     await _db.SaveChangesAsync();
-                    Book.AuthorId = author.Id; // usar el nuevo
+                    Book.AuthorId = author.Id;
                 }
             }
 
-            // ── Categoría: igual
-            if (!string.IsNullOrWhiteSpace(NewCategoryName))
+            // ── Categoría: validar duplicado y crear si corresponde ─────────────
+            if (usedOtherCat && !string.IsNullOrWhiteSpace(NewCategoryName))
             {
                 var name = NewCategoryName.Trim();
-
                 bool exists = await _db.Categories
                     .AnyAsync(c => c.Name.ToLower() == name.ToLower());
 
                 if (exists)
                 {
-                    ModelState.AddModelError("NewCategoryName",
+                    ModelState.AddModelError(nameof(NewCategoryName),
                         "Esa categoría ya existe. Elegila de la lista.");
                 }
                 else
@@ -120,6 +126,8 @@ namespace SegundoEjercicio.Pages.Libros
         }
     }
 }
+
+
 
 
 
