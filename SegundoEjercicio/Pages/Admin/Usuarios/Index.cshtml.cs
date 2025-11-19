@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using SegundoEjercicio.Data;        
-using SegundoEjercicio.Models;      
+using SegundoEjercicio.Data;
+using SegundoEjercicio.Models;
 
 namespace SegundoEjercicio.Pages.Admin.Usuarios;
 
@@ -87,7 +87,7 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostBanAsync(string id)
     {
         var me = await _userManager.GetUserAsync(User);
-        if (me!.Id == id) { TempData["msg"] = "No podés banearte a vos mismo."; return RedirectToPage(); }
+        if (me!.Id == id) { TempData["msg"] = "No podÃ©s banearte a vos mismo."; return RedirectToPage(); }
 
         var u = await _userManager.FindByIdAsync(id);
         if (u is null) { TempData["msg"] = "Usuario no encontrado."; return RedirectToPage(); }
@@ -110,67 +110,80 @@ public class IndexModel : PageModel
         return RedirectToPage();
     }
 
-    // ===== Eliminar (solo bloquea si hay préstamo ACTIVO) =====
+    // ===== Eliminar (VersiÃ³n protegida con Try-Catch) =====
     public async Task<IActionResult> OnPostDeleteAsync(string id)
     {
-        var me = await _userManager.GetUserAsync(User);
-        if (me!.Id == id) { TempData["msg"] = "No podés eliminarte a vos mismo."; return RedirectToPage(); }
-
-        var u = await _userManager.FindByIdAsync(id);
-        if (u is null) { TempData["msg"] = "Usuario no encontrado."; return RedirectToPage(); }
-
-        // No permitir borrar al ÚLTIMO bibliotecario
-        if (await _userManager.IsInRoleAsync(u, "Bibliotecario"))
+        try
         {
-            var biblioCount = (await _userManager.GetUsersInRoleAsync("Bibliotecario")).Count;
-            if (biblioCount <= 1)
+            var me = await _userManager.GetUserAsync(User);
+            if (me!.Id == id) { TempData["msg"] = "No podÃ©s eliminarte a vos mismo."; return RedirectToPage(); }
+
+            var u = await _userManager.FindByIdAsync(id);
+            if (u is null) { TempData["msg"] = "Usuario no encontrado."; return RedirectToPage(); }
+
+            // No permitir borrar al ÃšLTIMO bibliotecario
+            if (await _userManager.IsInRoleAsync(u, "Bibliotecario"))
             {
-                TempData["msg"] = "No se puede eliminar al único Bibliotecario.";
-                return RedirectToPage();
-            }
-        }
-
-        // Buscar MemberId (si lo tiene)
-        var memberId = await _db.Members
-            .Where(m => m.AppUserId == u.Id)
-            .Select(m => (int?)m.Id)
-            .FirstOrDefaultAsync();
-
-        if (memberId != null)
-        {
-            // Bloquea SOLO si hay préstamo ACTIVO
-            var tienePrestamoActivo = await _db.Loans
-                .AnyAsync(l => l.MemberId == memberId && l.ReturnDate == null);
-
-            if (tienePrestamoActivo)
-            {
-                TempData["msg"] = "No se puede eliminar: el usuario tiene un préstamo ACTIVO.";
-                return RedirectToPage();
+                var biblioCount = (await _userManager.GetUsersInRoleAsync("Bibliotecario")).Count;
+                if (biblioCount <= 1)
+                {
+                    TempData["msg"] = "No se puede eliminar al Ãºnico Bibliotecario.";
+                    return RedirectToPage();
+                }
             }
 
-            // Limpieza total de historial y solicitudes (cualquier estado)
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            // Buscar MemberId (si lo tiene)
+            var memberId = await _db.Members
+                .Where(m => m.AppUserId == u.Id)
+                .Select(m => (int?)m.Id)
+                .FirstOrDefaultAsync();
 
-            var loansHist = _db.Loans.Where(l => l.MemberId == memberId);
-            var reqsTodos = _db.LoanRequests.Where(r => r.MemberId == memberId);
+            if (memberId != null)
+            {
+                // Bloquea SOLO si hay prÃ©stamo ACTIVO
+                var tienePrestamoActivo = await _db.Loans
+                    .AnyAsync(l => l.MemberId == memberId && l.ReturnDate == null);
 
-            _db.Loans.RemoveRange(loansHist);
-            _db.LoanRequests.RemoveRange(reqsTodos);
+                if (tienePrestamoActivo)
+                {
+                    TempData["msg"] = "No se puede eliminar: el usuario tiene un prÃ©stamo ACTIVO.";
+                    return RedirectToPage();
+                }
 
-            // Borrar Member
-            var member = new Member { Id = memberId.Value };
-            _db.Attach(member);
-            _db.Remove(member);
+                // Limpieza total de historial y solicitudes (cualquier estado)
+                await using var tx = await _db.Database.BeginTransactionAsync();
 
-            await _db.SaveChangesAsync();
-            await tx.CommitAsync();
+                // --- CAMBIO: Usar ToListAsync para asegurar la carga antes de borrar ---
+                var loansHist = await _db.Loans.Where(l => l.MemberId == memberId).ToListAsync();
+                var reqsTodos = await _db.LoanRequests.Where(r => r.MemberId == memberId).ToListAsync();
+
+                if (loansHist.Any()) _db.Loans.RemoveRange(loansHist);
+                if (reqsTodos.Any()) _db.LoanRequests.RemoveRange(reqsTodos);
+
+                // Borrar Member
+                var member = await _db.Members.FindAsync(memberId.Value);
+                if (member != null)
+                {
+                    _db.Members.Remove(member);
+                }
+
+                await _db.SaveChangesAsync(); // Si falla aquÃ­ por FK, el catch lo atrapa
+                await tx.CommitAsync();
+            }
+
+            // Finalmente, borro la cuenta de Identity
+            var result = await _userManager.DeleteAsync(u);
+            TempData["msg"] = result.Succeeded
+                ? $"Usuario {u.Email} eliminado correctamente."
+                : string.Join(" | ", result.Errors.Select(e => e.Description));
+
         }
-
-        // Finalmente, borro la  cuenta de Identity
-        var result = await _userManager.DeleteAsync(u);
-        TempData["msg"] = result.Succeeded
-            ? $"Usuario {u.Email} eliminado."
-            : string.Join(" | ", result.Errors.Select(e => e.Description));
+        catch (Exception ex)
+        {
+            // Manejo seguro del error de base de datos (Neon/Postgres)
+            TempData["msg"] = "Error: No se pudo eliminar el usuario debido a registros relacionados en la base de datos. Considere solo banearlo.";
+            // Opcional: Loguear ex.Message si tienes un logger
+        }
 
         return RedirectToPage();
     }
