@@ -33,7 +33,7 @@ public class IndexModel : PageModel
 
         foreach (var u in users)
         {
-            // nombre con fallback a Member o al prefijo del email
+            // Nombre con fallback a Member o al prefijo del email
             var memberName = await _db.Members
                 .Where(m => m.AppUserId == u.Id)
                 .Select(m => m.FullName)
@@ -110,7 +110,7 @@ public class IndexModel : PageModel
         return RedirectToPage();
     }
 
-    // ===== Eliminar (Versión protegida con Try-Catch) =====
+    // ===== Eliminar (CORREGIDO PARA NEON/POSTGRES) =====
     public async Task<IActionResult> OnPostDeleteAsync(string id)
     {
         try
@@ -132,7 +132,7 @@ public class IndexModel : PageModel
                 }
             }
 
-            // Buscar MemberId (si lo tiene)
+            // Buscar MemberId asociado
             var memberId = await _db.Members
                 .Where(m => m.AppUserId == u.Id)
                 .Select(m => (int?)m.Id)
@@ -140,7 +140,7 @@ public class IndexModel : PageModel
 
             if (memberId != null)
             {
-                // Bloquea SOLO si hay préstamo ACTIVO
+                // Bloquea SOLO si hay préstamo ACTIVO (no devuelto)
                 var tienePrestamoActivo = await _db.Loans
                     .AnyAsync(l => l.MemberId == memberId && l.ReturnDate == null);
 
@@ -150,39 +150,51 @@ public class IndexModel : PageModel
                     return RedirectToPage();
                 }
 
-                // Limpieza total de historial y solicitudes (cualquier estado)
-                await using var tx = await _db.Database.BeginTransactionAsync();
+                // SOLUCIÓN NEON: Usar ExecutionStrategy para permitir la transacción manual
+                var strategy = _db.Database.CreateExecutionStrategy();
 
-                // --- CAMBIO: Usar ToListAsync para asegurar la carga antes de borrar ---
-                var loansHist = await _db.Loans.Where(l => l.MemberId == memberId).ToListAsync();
-                var reqsTodos = await _db.LoanRequests.Where(r => r.MemberId == memberId).ToListAsync();
-
-                if (loansHist.Any()) _db.Loans.RemoveRange(loansHist);
-                if (reqsTodos.Any()) _db.LoanRequests.RemoveRange(reqsTodos);
-
-                // Borrar Member
-                var member = await _db.Members.FindAsync(memberId.Value);
-                if (member != null)
+                await strategy.ExecuteAsync(async () =>
                 {
-                    _db.Members.Remove(member);
-                }
+                    // Dentro de la estrategia, abrimos la transacción
+                    await using var tx = await _db.Database.BeginTransactionAsync();
 
-                await _db.SaveChangesAsync(); // Si falla aquí por FK, el catch lo atrapa
-                await tx.CommitAsync();
+                    // 1. Traemos los datos a memoria para asegurar borrado (ToListAsync)
+                    var loansHist = await _db.Loans.Where(l => l.MemberId == memberId).ToListAsync();
+                    var reqsTodos = await _db.LoanRequests.Where(r => r.MemberId == memberId).ToListAsync();
+
+                    // 2. Borramos historial
+                    if (loansHist.Any()) _db.Loans.RemoveRange(loansHist);
+                    if (reqsTodos.Any()) _db.LoanRequests.RemoveRange(reqsTodos);
+
+                    // 3. Borramos Member
+                    var member = await _db.Members.FindAsync(memberId.Value);
+                    if (member != null)
+                    {
+                        _db.Members.Remove(member);
+                    }
+
+                    await _db.SaveChangesAsync();
+                    await tx.CommitAsync();
+                });
             }
 
             // Finalmente, borro la cuenta de Identity
             var result = await _userManager.DeleteAsync(u);
-            TempData["msg"] = result.Succeeded
-                ? $"Usuario {u.Email} eliminado correctamente."
-                : string.Join(" | ", result.Errors.Select(e => e.Description));
-
+            
+            if (result.Succeeded)
+            {
+                TempData["msg"] = $"Usuario {u.Email} eliminado correctamente.";
+            }
+            else
+            {
+                // Error interno de Identity
+                TempData["msg"] = "Error al eliminar cuenta: " + string.Join(" | ", result.Errors.Select(e => e.Description));
+            }
         }
         catch (Exception ex)
         {
-            // LO QUE DEBES PONER (Solo para depurar):
-            var errorReal = ex.InnerException?.Message ?? ex.Message;
-            TempData["msg"] = $"ERROR TÉCNICO: {errorReal}";
+            // Error de base de datos o conexión
+            TempData["msg"] = $"No se pudo eliminar. Intente de nuevo. (Error: {ex.Message})";
         }
 
         return RedirectToPage();
