@@ -180,11 +180,12 @@ public class IndexModel : PageModel
         }
         catch (Exception ex)
         {
-            // Manejo seguro del error de base de datos (Neon/Postgres)
-            TempData["msg"] = "Error: No se pudo eliminar el usuario debido a registros relacionados en la base de datos. Considere solo banearlo.";
-            // Opcional: Loguear ex.Message si tienes un logger
+            // LO QUE DEBES PONER (Solo para depurar):
+            var errorReal = ex.InnerException?.Message ?? ex.Message;
+            TempData["msg"] = $"ERROR TÉCNICO: {errorReal}";
         }
 
         return RedirectToPage();
     }
 }
+
